@@ -35,6 +35,14 @@ The original unmodified Python unit test suite passes **6/6**. A separate integr
 
 An injected database exception after the third managed step raised an expected error, and the test verified that all shadow schema and counter changes were rolled back. A separate loopback Paramiko SSH harness exercised the application’s real `connect` and `run_remote_command` methods: query stdin streaming and propagation of an actual PostgreSQL error both passed. The test scripts and receipts are in `benchmarks/`.
 
+
+
+### Full application entrypoint test
+
+A follow-up local exercise called the actual \`PostgresAdminService.execute_cross_table_expansion\` method (not only individual SQL snippets) against 1,000 original-generator records copied into a scratch schema. The method built the full PostgreSQL transaction, acquired locks, generated the source manifest, committed all six inserts, returned 36 timing items and invoked the post-commit callback once. An independent injected-error run just before COMMIT verified rollback of all six destination tables and suppression of the success callback.
+
+**This is not a full production-style end-to-end evaluation:** selected metadata/version preflight methods and SSH transport were replaced with local test doubles. The source test and machine-readable receipts are published as \`benchmarks/full_managed_entrypoint_cases.py\` and \`benchmarks/full_entrypoint_transaction_cases_1000.json\`. No registered version/dump restoration and no durable checkpoint/resume were established.
+
 ## Recovery strategy and resource use
 
 For database errors in the scenarios tested, the existing single-transaction expansion model preserves atomicity: PostgreSQL discards all uncommitted changes. We intentionally did not replace the original version and dump/recovery system with an untested alternative.
