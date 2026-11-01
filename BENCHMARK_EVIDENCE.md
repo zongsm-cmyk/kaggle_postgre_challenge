@@ -75,3 +75,16 @@ An additional, isolated integration test used the application’s **real \`Postg
 Verified: SSH password authentication, streamed SQL stdin, correct transfer of the query result (250,000 source rows), propagation of a deliberately raised PostgreSQL division-by-zero error to the application, and unchanged reference table2 rows (580,772). Two allowlisted commands completed; both tests passed.
 
 The test source and original result receipt are at \`benchmarks/ssh_loopback_protocol.py\` and \`benchmarks/ssh_loopback_protocol_receipt.json\`. **This server is an in-process Windows SSH test harness, not an actual Linux \`sshd\` deployment.** It does not reproduce remote SSH latency, actual Linux host security, GUI operations, backup/version registration, interrupted-network resumption, or the judged \`MEASURED PROCESSING TOTAL\`.
+
+
+## Application full Expand entrypoint success and rollback
+
+In a dedicated PostgreSQL scratch database (inside the offline Docker container), a controlled test called the actual application's **\`PostgresAdminService.execute_cross_table_expansion\`** entrypoint. It used 1,000 official-generator rows copied to a separate source schema and two new destination schemas. Database preflight checks that depend on a registered production metadata/version environment were replaced with bounded test stubs, and the SSH transport was replaced by an allowlisted Docker-to-PostgreSQL command; **the application's actual transaction SQL builder, manifest logic, all six managed inserts, COMMIT, timing telemetry and callback were exercised unchanged.**
+
+The successful run committed destination row counts of \`table3=4, table4=18, table1=1000, table5=1000, table6=1000, table2=2320\`. The result included the expected 1,000 source rows in the manifest and **36 timing-report items**, and the post-commit callback ran once. It took 3.772 seconds inside this local harness.
+
+The second test used a separate empty destination schema and injected an SQL division-by-zero exception immediately **before COMMIT**. The full database transaction rolled back: all six destination tables and counters remained at zero, and the post-commit callback did **not** execute. This test took 3.769 seconds. Original \`public.raw_data\` (250,000 rows) and \`public.table2\` (580,772 rows) were unchanged.
+
+The reproducible test and JSON receipt are \`benchmarks/full_managed_entrypoint_cases.py\` and \`benchmarks/full_entrypoint_transaction_cases_1000.json\`.
+
+**Limitations:** transport and selected preflight metadata checks are test doubles; no real SQL version registration or dump/restore has been tested. This exercise confirms a full application method's transaction envelope, but does **not** count as a complete official SSH+GUI+versioned-backup benchmark or durable checkpoint/restart.
