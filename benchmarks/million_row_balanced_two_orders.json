@@ -1,0 +1,18 @@
+{
+  "first_order": {
+    "ORIGINAL": 38022.141,
+    "OPTIMIZED": 20974.273
+  },
+  "reversed_order": {
+    "OPTIMIZED": 20594.747,
+    "ORIGINAL": 36237.867
+  },
+  "source_rows": 1000000,
+  "destination_rows": 2321522,
+  "full_multiset_equal": true,
+  "rollback_verified": true,
+  "reverse_run_wall_s": 60.73,
+  "median_reference_ms": 37130.004,
+  "median_candidate_ms": 20784.510000000002,
+  "median_speedup_pct": 44.022
+}
