@@ -66,3 +66,12 @@ The original and optimized sixth queries were run on separate **identically defi
 
 The complete, machine-readable cross-over receipt is published as \`benchmarks/million_row_balanced_two_orders.json\`. This **does not** establish a full application/SSH \`MEASURED PROCESSING TOTAL\` improvement; performance and storage behavior on tables with different durability settings or at hundreds of millions of source rows have not been tested.
 
+
+
+## Loopback SSH transport integration (bounded)
+
+An additional, isolated integration test used the application’s **real \`PostgresAdminService.connect\` and \`run_remote_command\` methods** against a temporary Paramiko SSH test server bound strictly to **127.0.0.1**. The test used a random, process-local password and ephemeral TCP port, accepted only one exact, allowlisted PostgreSQL CLI command, then forwarded the SQL bytes to a **real PostgreSQL binary inside the dedicated Linux Docker container**.
+
+Verified: SSH password authentication, streamed SQL stdin, correct transfer of the query result (250,000 source rows), propagation of a deliberately raised PostgreSQL division-by-zero error to the application, and unchanged reference table2 rows (580,772). Two allowlisted commands completed; both tests passed.
+
+The test source and original result receipt are at \`benchmarks/ssh_loopback_protocol.py\` and \`benchmarks/ssh_loopback_protocol_receipt.json\`. **This server is an in-process Windows SSH test harness, not an actual Linux \`sshd\` deployment.** It does not reproduce remote SSH latency, actual Linux host security, GUI operations, backup/version registration, interrupted-network resumption, or the judged \`MEASURED PROCESSING TOTAL\`.
