@@ -34,3 +34,17 @@ A deliberate SQL exception after an in-transaction operation yielded an error an
 Run the existing repository tests with the dependencies in `requirements.txt`. Generate the official sample with the unmodified `generate_database.py`, select `raw_schema=group001`, apply all six recipes in the mandated order, and compare the original and modified table2 query on the same environment. The project has been validated on 100k and 250k rows but **not** on 300-million-row workloads.
 
 **Not yet verified:** The judge's primary metric, `MEASURED PROCESSING TOTAL`, includes SSH, application preflight, database metadata, version registration and dump/version recovery. Our numbers measure only one SQL query and do not predict the final competition score. Full end-to-end checks and authenticated Kaggle registration still need to pass. The competition has a $100 first-place prize; no income is earned by publishing this branch.
+
+
+## Shadow-schema failure injection (application-managed DML)
+
+A follow-up isolated test ran the existing application’s actual SQL preflight parser and managed DML wrappers on the original 250,000 sponsor-generated records. The six destination inserts ran within a single PostgreSQL transaction, with real per-table row-counter updates, and the entire transaction was rolled back.
+
+On an additional run, an explicit SQL division-by-zero error was injected after the third managed destination insert. The client observed the database error, disconnected, and verified that **no shadow schema or counter table remained**, that all 250,000 source rows were unchanged, and that the 580,772 original \`table2\` reference rows were untouched.
+
+| Mode | Result | Wall time |
+| --- | --- | ---: |
+| Six managed inserts + counts + ROLLBACK | PASS, 6/6 targets | 14.003 s |
+| Inject database error after third managed insert | PASS, complete transactional rollback | 4.806 s |
+
+The opt-in source test is included at \`benchmarks/managed_shadow_transaction.py\`. It explicitly refuses unknown containers or databases; it is intended only for the temporary lab used in development, never production. This validates application SQL atomicity and observable DB consistency for one error-injection scenario. It **does not implement or prove durable checkpoint/resume after an SSH interruption**, an important remaining part of the challenge’s recovery criterion.
