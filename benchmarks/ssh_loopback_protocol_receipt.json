@@ -1,0 +1,14 @@
+{
+  "scope": "real application Paramiko SSH transport via temporary loopback server -> genuine Linux PostgreSQL binary",
+  "not_real_Linux_SSH_daemon": true,
+  "database": "kaggle_e2e_lab",
+  "container": "kaggle-pg-20261101-isolated",
+  "bound_address": "127.0.0.1",
+  "ephemeral_port_used": true,
+  "errors": [],
+  "ssh_command_streaming": "PASS",
+  "ssh_remote_error_propagation": "PASS",
+  "database_unchanged": true,
+  "allowed_execution_counts": 2,
+  "result": "PASS"
+}
