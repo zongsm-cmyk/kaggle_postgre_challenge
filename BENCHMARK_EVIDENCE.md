@@ -48,3 +48,21 @@ On an additional run, an explicit SQL division-by-zero error was injected after 
 | Inject database error after third managed insert | PASS, complete transactional rollback | 4.806 s |
 
 The opt-in source test is included at \`benchmarks/managed_shadow_transaction.py\`. It explicitly refuses unknown containers or databases; it is intended only for the temporary lab used in development, never production. This validates application SQL atomicity and observable DB consistency for one error-injection scenario. It **does not implement or prove durable checkpoint/resume after an SSH interruption**, an important remaining part of the challenge’s recovery criterion.
+
+
+## One-million-row balanced scale experiment
+
+A separate PostgreSQL 18.6 Docker lab (container \`kaggle-pg-1m-private\`, **network mode none**, no published ports) ran the unmodified sponsor generator with its original fixed seed on **1,000,000** source rows. The original first five SQL recipes were then executed in dependency order, producing 4, 27, 1,000,000, 1,000,000, and 1,000,000 rows in their respective destination tables.
+
+The original and optimized sixth queries were run on separate **identically defined temporary tables** (\`LIKE public.table2 INCLUDING ALL\`). Both run orders were measured to control for cache-warming and order effects. Each produced **2,321,522** destination rows. Full bidirectional multiset checks using \`EXCEPT ALL\` found **zero missing and zero extra rows**.
+
+| Execution order | Original SQL | Optimized SQL |
+|---|---:|---:|
+| Original, then optimized | 38,022.141 ms | 20,974.273 ms |
+| Optimized, then original | 36,237.867 ms | 20,594.747 ms |
+| **Two-order median** | **37,130.004 ms** | **20,784.510 ms** |
+
+**Measured SQL-only speedup: 44.022%** on this one-million-row workload. All temporary comparison objects were rolled back. The database remains in its initial state with \`public.table2\` empty and the original first five destination tables populated.
+
+The complete, machine-readable cross-over receipt is published as \`benchmarks/million_row_balanced_two_orders.json\`. This **does not** establish a full application/SSH \`MEASURED PROCESSING TOTAL\` improvement; performance and storage behavior on tables with different durability settings or at hundreds of millions of source rows have not been tested.
+
